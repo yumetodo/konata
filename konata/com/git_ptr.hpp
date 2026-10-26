@@ -125,7 +125,7 @@ public:
 #if _MSC_VER >= 1800
 	explicit operator bool() const throw() { return m_cookie != 0; }
 #endif
-	typename com_smart_ptr<T>::type get() const throw() { return get_from_git<T>(m_cookie); }
+	typename com_smart_ptr<T>::type get() const throw() { return typename com_smart_ptr<T>::type(get_from_git<T>(m_cookie), false); }
 	DWORD get_cookie() const throw() { return m_cookie; }
 
 private:
@@ -184,7 +184,7 @@ public:
 #if _MSC_VER >= 1800
 	explicit operator bool() const throw() { return m_cookie != 0; }
 #endif
-	typename com_smart_ptr<T>::type get() const throw() { return get_from_git<T>(m_cookie); }
+	typename com_smart_ptr<T>::type get() const throw() { return typename com_smart_ptr<T>::type(get_from_git<T>(m_cookie), false); }
 	DWORD get_cookie() const throw() { return m_cookie; }
 	bool is_lock_free() const throw() { return m_cookie.is_lock_free(); }
 
