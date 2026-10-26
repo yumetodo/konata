@@ -62,13 +62,21 @@ protected:
 	}
 
 	template<typename T>
-	static T* get_from_git(DWORD cookie)
+	static HRESULT get_from_git_nothrow(DWORD cookie, _Deref_out_opt_ T** pp) throw()
 	{
+		if (pp == nullptr)
+			return E_POINTER;
+		*pp = nullptr;
 		if (cookie == 0)
-			return nullptr;
-		T* ret;
-		throw_if_failed(get_git()->GetInterfaceFromGlobal(cookie, IID_PPV_ARGS(&ret)));
-		return ret;
+			return S_OK;
+		IGlobalInterfaceTablePtr git;
+		HRESULT hr = get_git_nothrow(git);
+		if (FAILED(hr))
+			return hr;
+		hr = git.GetInterfacePtr()->GetInterfaceFromGlobal(cookie, IID_PPV_ARGS(pp));
+		if (FAILED(hr))
+			*pp = nullptr;
+		return hr;
 	}
 
 	template<typename Interface>
@@ -125,7 +133,14 @@ public:
 #if _MSC_VER >= 1800
 	explicit operator bool() const throw() { return m_cookie != 0; }
 #endif
-	typename com_smart_ptr<T>::type get() const throw() { return typename com_smart_ptr<T>::type(get_from_git<T>(m_cookie), false); }
+	// Returns null on failure as well as for an empty cookie; use copy_to to get the HRESULT.
+	typename com_smart_ptr<T>::type get() const throw()
+	{
+		T* p;
+		(void)get_from_git_nothrow<T>(m_cookie, &p);
+		return typename com_smart_ptr<T>::type(p, false);
+	}
+	HRESULT copy_to(_Deref_out_opt_ T** pp) const throw() { return get_from_git_nothrow<T>(m_cookie, pp); }
 	DWORD get_cookie() const throw() { return m_cookie; }
 
 private:
@@ -184,7 +199,14 @@ public:
 #if _MSC_VER >= 1800
 	explicit operator bool() const throw() { return m_cookie != 0; }
 #endif
-	typename com_smart_ptr<T>::type get() const throw() { return typename com_smart_ptr<T>::type(get_from_git<T>(m_cookie), false); }
+	// Returns null on failure as well as for an empty cookie; use copy_to to get the HRESULT.
+	typename com_smart_ptr<T>::type get() const throw()
+	{
+		T* p;
+		(void)get_from_git_nothrow<T>(m_cookie, &p);
+		return typename com_smart_ptr<T>::type(p, false);
+	}
+	HRESULT copy_to(_Deref_out_opt_ T** pp) const throw() { return get_from_git_nothrow<T>(m_cookie, pp); }
 	DWORD get_cookie() const throw() { return m_cookie; }
 	bool is_lock_free() const throw() { return m_cookie.is_lock_free(); }
 
